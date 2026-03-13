@@ -8,7 +8,6 @@ import java.awt.*;
 
 public class ProductosFrame extends JInternalFrame {
 
-    // ── Campos del formulario ─────────────────────────────────────────────
     public JTextField txtId, txtCodigo, txtNombre, txtPrecioCompra,
                       txtPrecioVenta, txtStock, txtStockMin;
     public JTextArea  txtDescripcion;
@@ -17,18 +16,22 @@ public class ProductosFrame extends JInternalFrame {
     public ButtonGroup  bgEstado;
     public JButton btnGuardar, btnLimpiar;
 
-    // ── Catálogo ──────────────────────────────────────────────────────────
     public JTable  tabla;
     public DefaultTableModel modeloTabla;
     public JComboBox<String> cmbFiltro;
     public JButton btnBuscar, btnMostrarTodos, btnExportar;
+    private ProductosController controller;
 
     public ProductosFrame(GestorProductos gestor) {
         super("Productos", true, true, true, true);
         setSize(900, 560);
         setLocation(10, 10);
         initUI();
-        new ProductosController(this, gestor);
+        controller = new ProductosController(this, gestor);
+    }
+
+    public void recargarDatos() {
+        controller.recargarDatos();
     }
 
     private void initUI() {
@@ -43,7 +46,7 @@ public class ProductosFrame extends JInternalFrame {
 
     private JPanel buildPanelFormulario() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Alta y Edición"));
+        panel.setBorder(BorderFactory.createTitledBorder("Alta y Edicion"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets  = new Insets(4, 4, 4, 4);
         gbc.fill    = GridBagConstraints.HORIZONTAL;
@@ -55,7 +58,7 @@ public class ProductosFrame extends JInternalFrame {
         txtDescripcion = new JTextArea(3, 15);
         txtDescripcion.setLineWrap(true);
         txtDescripcion.setWrapStyleWord(true);
-        cmbCategoria   = new JComboBox<>(new String[]{"Electrónica","Ropa","Alimentos","Hogar","Otro"});
+        cmbCategoria   = new JComboBox<>(new String[]{"Electronica","Ropa","Alimentos","Hogar","Otro"});
         txtPrecioCompra= new JTextField();
         txtPrecioVenta = new JTextField();
         txtStock       = new JTextField();
@@ -72,22 +75,20 @@ public class ProductosFrame extends JInternalFrame {
 
         int row = 0;
         agregarFila(panel, gbc, row++, "ID [Auto]:",           txtId);
-        agregarFila(panel, gbc, row++, "Código:",              txtCodigo);
+        agregarFila(panel, gbc, row++, "Codigo:",              txtCodigo);
         agregarFila(panel, gbc, row++, "Nombre del Producto:", txtNombre);
 
-        // Descripción ocupa 2 filas
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        panel.add(new JLabel("Descripción:"), gbc);
+        panel.add(new JLabel("Descripcion:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1;
         panel.add(new JScrollPane(txtDescripcion), gbc); row++;
 
-        agregarFila(panel, gbc, row++, "Categoría:",       cmbCategoria);
+        agregarFila(panel, gbc, row++, "Categoria:",       cmbCategoria);
         agregarFila(panel, gbc, row++, "Precio Compra:",   txtPrecioCompra);
         agregarFila(panel, gbc, row++, "Precio Venta:",    txtPrecioVenta);
         agregarFila(panel, gbc, row++, "Stock Inicial:",   txtStock);
-        agregarFila(panel, gbc, row++, "Stock Mín. Alerta:", txtStockMin);
+        agregarFila(panel, gbc, row++, "Stock Min. Alerta:", txtStockMin);
 
-        // Estado
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
         panel.add(new JLabel("Estado Actual:"), gbc);
         JPanel panelEstado = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -97,7 +98,6 @@ public class ProductosFrame extends JInternalFrame {
         gbc.gridx = 1; gbc.weightx = 1;
         panel.add(panelEstado, gbc); row++;
 
-        // Botones
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2; gbc.weightx = 1;
         JPanel panelBtns = new JPanel(new FlowLayout());
         panelBtns.add(btnGuardar);
@@ -109,9 +109,9 @@ public class ProductosFrame extends JInternalFrame {
 
     private JPanel buildPanelCatalogo() {
         JPanel panel = new JPanel(new BorderLayout(4, 4));
-        panel.setBorder(BorderFactory.createTitledBorder("Catálogo de Productos"));
+        panel.setBorder(BorderFactory.createTitledBorder("Catalogo de Productos"));
 
-        String[] columnas = {"ID", "Código", "Nombre", "Categoría", "Stock", "P.Venta", "Estado"};
+        String[] columnas = {"ID", "Codigo", "Nombre", "Categoria", "Stock", "P.Venta", "Estado"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -120,10 +120,9 @@ public class ProductosFrame extends JInternalFrame {
         tabla.getTableHeader().setReorderingAllowed(false);
         panel.add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        // Panel de filtros inferiores
         JPanel panelFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panelFiltro.add(new JLabel("Buscar por:"));
-        cmbFiltro = new JComboBox<>(new String[]{"Nombre", "Categoría", "Estado"});
+        cmbFiltro = new JComboBox<>(new String[]{"Nombre", "Categoria", "Estado"});
         panelFiltro.add(cmbFiltro);
         btnBuscar      = new JButton("Buscar");
         btnMostrarTodos= new JButton("Mostrar Todos");
@@ -136,7 +135,6 @@ public class ProductosFrame extends JInternalFrame {
         return panel;
     }
 
-    /** Utilidad para agregar fila label+componente con GridBagLayout */
     private void agregarFila(JPanel p, GridBagConstraints gbc,
                               int row, String label, JComponent comp) {
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 1; gbc.weightx = 0;

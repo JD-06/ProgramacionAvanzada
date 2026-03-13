@@ -6,11 +6,14 @@ import java.util.ArrayList;
 
 public class ArchivoCSV {
 
-    private static final String RUTA = "productos.csv";
+    public static final String RUTA_POR_DEFECTO = "productos.csv";
 
-    /** Guarda la lista completa en el archivo CSV */
     public static void exportarCSV(ArrayList<Producto> lista) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(RUTA))) {
+        exportarCSV(lista, RUTA_POR_DEFECTO);
+    }
+
+    public static void exportarCSV(ArrayList<Producto> lista, String ruta) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(ruta))) {
             for (Producto p : lista) {
                 pw.println(p.toString());
             }
@@ -19,10 +22,13 @@ public class ArchivoCSV {
         }
     }
 
-    /** Carga el archivo CSV y reconstruye la lista de Producto */
     public static ArrayList<Producto> importarCSV() {
+        return importarCSV(RUTA_POR_DEFECTO);
+    }
+
+    public static ArrayList<Producto> importarCSV(String ruta) {
         ArrayList<Producto> lista = new ArrayList<>();
-        File archivo = new File(RUTA);
+        File archivo = new File(ruta);
         if (!archivo.exists()) return lista;
 
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
@@ -47,7 +53,7 @@ public class ArchivoCSV {
                                           categoria, precCom, precVen,
                                           stock, stockMin, estado));
                 } catch (NumberFormatException e) {
-                    System.err.println("Línea mal formada, se omite: " + linea);
+                    System.err.println("Linea mal formada, se omite: " + linea);
                 }
             }
         } catch (IOException e) {

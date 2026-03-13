@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class VentaController {
 
@@ -23,11 +22,17 @@ public class VentaController {
     public VentaController(PuntoDeVentaFrame vista, GestorProductos gestor) {
         this.vista  = vista;
         this.gestor = gestor;
-        cargarProductosCombo();
         registrarEventos();
+        recargarDatos();
     }
 
-    // ── Carga del combo ───────────────────────────────────────────────────
+    public void recargarDatos() {
+        carrito.clear();
+        cargarProductosCombo();
+        actualizarTablaCarrito();
+        vista.txtCantidad.setText("1");
+    }
+
     private void cargarProductosCombo() {
         vista.cmbProducto.removeAllItems();
         for (Producto p : gestor.getActivos()) {
@@ -36,14 +41,13 @@ public class VentaController {
         }
     }
 
-    // ── Eventos ───────────────────────────────────────────────────────────
     private void registrarEventos() {
 
         vista.btnAnadir.addActionListener(e -> anadirAlCarrito());
 
         vista.btnModificarItem.addActionListener(e -> {
             int fila = vista.tablaCarrito.getSelectedRow();
-            if (fila < 0) { avisar("Seleccione un ítem para modificar."); return; }
+            if (fila < 0) { avisar("Seleccione un item para modificar."); return; }
             String nuevaCant = JOptionPane.showInputDialog(vista,
                 "Nueva cantidad:", vista.modeloCarrito.getValueAt(fila, 2));
             if (nuevaCant == null) return;
@@ -53,13 +57,13 @@ public class VentaController {
                 carrito.get(fila).setCantidad(cant);
                 actualizarTablaCarrito();
             } catch (NumberFormatException ex) {
-                avisar("Ingrese un número válido.");
+                avisar("Ingrese un numero valido.");
             }
         });
 
         vista.btnEliminarItem.addActionListener(e -> {
             int fila = vista.tablaCarrito.getSelectedRow();
-            if (fila < 0) { avisar("Seleccione un ítem para eliminar."); return; }
+            if (fila < 0) { avisar("Seleccione un item para eliminar."); return; }
             carrito.remove(fila);
             actualizarTablaCarrito();
         });
@@ -74,7 +78,6 @@ public class VentaController {
         vista.btnExportarTicket.addActionListener(e -> exportarTicket());
     }
 
-    // ── Añadir al carrito ─────────────────────────────────────────────────
     private void anadirAlCarrito() {
         int idxCombo = vista.cmbProducto.getSelectedIndex();
         if (idxCombo < 0) { avisar("Seleccione un producto."); return; }
@@ -88,7 +91,7 @@ public class VentaController {
             cantidad = Integer.parseInt(vista.txtCantidad.getText().trim());
             if (cantidad <= 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            avisar("La cantidad debe ser un número entero positivo.");
+            avisar("La cantidad debe ser un numero entero positivo.");
             return;
         }
 
@@ -97,7 +100,6 @@ public class VentaController {
             return;
         }
 
-        // Si ya existe en el carrito, sumar cantidad
         for (ItemCarrito item : carrito) {
             if (item.getProducto().getId() == prod.getId()) {
                 item.setCantidad(item.getCantidad() + cantidad);
@@ -109,7 +111,6 @@ public class VentaController {
         actualizarTablaCarrito();
     }
 
-    // ── Actualizar tabla y totales ────────────────────────────────────────
     private void actualizarTablaCarrito() {
         vista.modeloCarrito.setRowCount(0);
         double subtotal = 0;
@@ -130,25 +131,30 @@ public class VentaController {
         vista.txtTotal.setText(String.format("$%.2f", total));
     }
 
-    // ── Procesar pago ─────────────────────────────────────────────────────
     private void procesarPago() {
-        if (carrito.isEmpty()) { avisar("El carrito está vacío."); return; }
+        if (carrito.isEmpty()) { avisar("El carrito esta vacio."); return; }
 
         int confirm = JOptionPane.showConfirmDialog(vista,
             "Total a cobrar: " + vista.txtTotal.getText() +
-            "\n¿Confirmar pago?",
+            "\nConfirmar pago?",
             "Procesar Pago", JOptionPane.YES_NO_OPTION);
 
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        // Reducir stock
         for (ItemCarrito item : carrito) {
             gestor.reducirStock(item.getProducto().getId(), item.getCantidad());
         }
-
-        JOptionPane.showMessageDialog(vista,
-            "¡Pago procesado!\nTotal: " + vista.txtTotal.getText(),
-            "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        try {
+            String archivo = guardarTicketTxt();
+            JOptionPane.showMessageDialog(vista,
+                "Pago procesado!\nTotal: " + vista.txtTotal.getText() + "\nTicket: " + archivo,
+                "Exito", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(vista,
+                "Pago procesado!\nTotal: " + vista.txtTotal.getText() +
+                    "\nNo se pudo generar ticket: " + ex.getMessage(),
+                "Exito parcial", JOptionPane.WARNING_MESSAGE);
+        }
 
         carrito.clear();
         actualizarTablaCarrito();
@@ -157,20 +163,29 @@ public class VentaController {
         vista.txtNombreCliente.setText("");
     }
 
-    // ── Exportar ticket ───────────────────────────────────────────────────
     private void exportarTicket() {
-        if (carrito.isEmpty()) { avisar("El carrito está vacío."); return; }
+        if (carrito.isEmpty()) { avisar("El carrito esta vacio."); return; }
 
-        String timestamp = LocalDateTime.now()
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        try {
+            String archivo = guardarTicketTxt();
+            JOptionPane.showMessageDialog(vista,
+                "Ticket exportado: " + archivo, "Exportar", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(vista,
+                "Error al exportar ticket: " + ex.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String guardarTicketTxt() throws IOException {
+        LocalDateTime ahora = LocalDateTime.now();
+        String timestamp = ahora.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String archivo = "ticket_" + timestamp + ".txt";
-
         try (FileWriter fw = new FileWriter(archivo)) {
             fw.write("====================================\n");
             fw.write("          TICKET DE VENTA           \n");
             fw.write("====================================\n");
-            fw.write("Fecha: " + LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "\n");
+            fw.write("Fecha: " + ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "\n");
             fw.write("Cliente: " + vista.txtNombreCliente.getText() + "\n");
             fw.write("Cajero:  " + vista.txtCajero.getText() + "\n");
             fw.write("------------------------------------\n");
@@ -189,15 +204,8 @@ public class VentaController {
             fw.write(String.format("IVA:      %s\n", vista.txtIva.getText()));
             fw.write(String.format("TOTAL:    %s\n", vista.txtTotal.getText()));
             fw.write("====================================\n");
-
-            JOptionPane.showMessageDialog(vista,
-                "Ticket exportado: " + archivo, "Exportar", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(vista,
-                "Error al exportar ticket: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
         }
+        return archivo;
     }
 
     private void avisar(String msg) {

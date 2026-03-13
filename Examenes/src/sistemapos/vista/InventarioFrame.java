@@ -8,26 +8,28 @@ import java.awt.*;
 
 public class InventarioFrame extends JInternalFrame {
 
-    // ── Filtros ───────────────────────────────────────────────────────────
     public JTextField    txtFiltroId, txtFiltroNombre;
     public JComboBox<String> cmbTipo;
     public JRadioButton  rbTodos, rbDisponible, rbAgotado;
     public ButtonGroup   bgEstado;
     public JButton       btnBuscar, btnLimpiarFiltros;
 
-    // ── Acciones ──────────────────────────────────────────────────────────
     public JButton       btnCrearNuevo, btnModificar, btnEliminar;
 
-    // ── Tabla ─────────────────────────────────────────────────────────────
     public JTable            tabla;
     public DefaultTableModel modeloTabla;
+    private InventarioController controller;
 
     public InventarioFrame(GestorProductos gestor) {
         super("Inventario", true, true, true, true);
         setSize(860, 480);
         setLocation(30, 30);
         initUI();
-        new InventarioController(this, gestor);
+        controller = new InventarioController(this, gestor);
+    }
+
+    public void recargarDatos() {
+        controller.recargarDatos();
     }
 
     private void initUI() {
@@ -42,18 +44,17 @@ public class InventarioFrame extends JInternalFrame {
 
     private JPanel buildPanelFiltros() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Filtros y Búsqueda"));
-        panel.setPreferredSize(new Dimension(210, 0));
+        panel.setBorder(BorderFactory.createTitledBorder("Filtros y Busqueda"));
+        panel.setPreferredSize(new Dimension(300, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets  = new Insets(4, 4, 4, 4);
-        gbc.fill    = GridBagConstraints.HORIZONTAL;
-        gbc.anchor  = GridBagConstraints.WEST;
-        gbc.gridwidth = 2;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
 
         txtFiltroId     = new JTextField();
         txtFiltroNombre = new JTextField();
-        cmbTipo = new JComboBox<>(new String[]{"Todos","Electrónica","Ropa","Alimentos","Hogar","Otro"});
+        cmbTipo = new JComboBox<>(new String[]{"Todos","Electronica","Ropa","Alimentos","Hogar","Otro"});
 
         rbTodos      = new JRadioButton("Todos",      true);
         rbDisponible = new JRadioButton("Disponible");
@@ -67,27 +68,36 @@ public class InventarioFrame extends JInternalFrame {
         btnLimpiarFiltros = new JButton("Limpiar Filtros");
 
         int r = 0;
-        gbc.gridy = r++; panel.add(new JLabel("ID:"),     gbc);
-        gbc.gridy = r++; panel.add(txtFiltroId,            gbc);
-        gbc.gridy = r++; panel.add(new JLabel("Nombre:"), gbc);
-        gbc.gridy = r++; panel.add(txtFiltroNombre,        gbc);
-        gbc.gridy = r++; panel.add(new JLabel("Tipo:"),   gbc);
-        gbc.gridy = r++; panel.add(cmbTipo,                gbc);
+        gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 1; gbc.weightx = 0;
+        panel.add(new JLabel("ID:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        panel.add(txtFiltroId, gbc); r++;
+
+        gbc.gridx = 0; gbc.gridy = r; gbc.weightx = 0;
+        panel.add(new JLabel("Nombre:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        panel.add(txtFiltroNombre, gbc); r++;
+
+        gbc.gridx = 0; gbc.gridy = r; gbc.weightx = 0;
+        panel.add(new JLabel("Tipo:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        panel.add(cmbTipo, gbc); r++;
 
         JPanel panelEstado = new JPanel(new GridLayout(3, 1));
         panelEstado.setBorder(BorderFactory.createTitledBorder("Estado"));
         panelEstado.add(rbTodos);
         panelEstado.add(rbDisponible);
         panelEstado.add(rbAgotado);
-        gbc.gridy = r++; panel.add(panelEstado, gbc);
+        gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 2; gbc.weightx = 1;
+        panel.add(panelEstado, gbc); r++;
 
-        JPanel panelBtns = new JPanel(new GridLayout(1, 2, 4, 0));
+        JPanel panelBtns = new JPanel(new GridLayout(2, 1, 0, 6));
         panelBtns.add(btnBuscar);
         panelBtns.add(btnLimpiarFiltros);
-        gbc.gridy = r++; panel.add(panelBtns, gbc);
+        gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 2; gbc.weightx = 1;
+        panel.add(panelBtns, gbc); r++;
 
-        // Relleno para empujar hacia arriba
-        gbc.gridy = r; gbc.weighty = 1;
+        gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 2; gbc.weighty = 1;
         panel.add(new JLabel(), gbc);
 
         return panel;
@@ -106,9 +116,8 @@ public class InventarioFrame extends JInternalFrame {
         tabla.getTableHeader().setReorderingAllowed(false);
         panel.add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        // Acciones
         JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        panelAcciones.setBorder(BorderFactory.createTitledBorder("Acciones de Selección"));
+        panelAcciones.setBorder(BorderFactory.createTitledBorder("Acciones de Seleccion"));
         btnCrearNuevo = new JButton("Crear Nuevo");
         btnModificar  = new JButton("Modificar");
         btnEliminar   = new JButton("Eliminar");

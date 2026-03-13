@@ -10,7 +10,7 @@ public class Producto {
     private double precioVenta;
     private int stock;
     private int stockMinimo;
-    private String estado; // "Activo" o "Desactivado"
+    private String estado; 
 
     public Producto(int id, String codigo, String nombre, String descripcion,
                     String categoria, double precioCompra, double precioVenta,
@@ -27,7 +27,7 @@ public class Producto {
         this.estado = estado;
     }
 
-    // ── Getters ──────────────────────────────────────────────────────────
+    
     public int getId()            { return id; }
     public String getCodigo()     { return codigo; }
     public String getNombre()     { return nombre; }
@@ -39,7 +39,7 @@ public class Producto {
     public int getStockMinimo()   { return stockMinimo; }
     public String getEstado()     { return estado; }
 
-    // ── Setters ──────────────────────────────────────────────────────────
+    
     public void setId(int id)                   { this.id = id; }
     public void setCodigo(String codigo)         { this.codigo = codigo; }
     public void setNombre(String nombre)         { this.nombre = nombre; }

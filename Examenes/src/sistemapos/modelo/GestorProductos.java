@@ -8,10 +8,20 @@ public class GestorProductos {
 
     private ArrayList<Producto> lista;
     private static int contadorId = 1;
+    private String rutaArchivo;
 
     public GestorProductos() {
-        lista = ArchivoCSV.importarCSV();
-        // Ajustar el contador al mayor ID existente
+        this(ArchivoCSV.RUTA_POR_DEFECTO);
+    }
+
+    public GestorProductos(String rutaArchivoInicial) {
+        rutaArchivo = rutaArchivoInicial;
+        lista = ArchivoCSV.importarCSV(rutaArchivo);
+        recalcularContadorId();
+    }
+
+    private void recalcularContadorId() {
+        contadorId = 1;
         for (Producto p : lista) {
             if (p.getId() >= contadorId) {
                 contadorId = p.getId() + 1;
@@ -19,17 +29,23 @@ public class GestorProductos {
         }
     }
 
-    // ── CRUD ─────────────────────────────────────────────────────────────
+    public void cargarDesdeCSV(String rutaArchivoNuevo) {
+        rutaArchivo = rutaArchivoNuevo;
+        lista = ArchivoCSV.importarCSV(rutaArchivo);
+        recalcularContadorId();
+    }
 
-    /** Insertar: asigna ID automático y agrega el producto */
+    public String getRutaArchivo() {
+        return rutaArchivo;
+    }
+
     public boolean insertar(Producto p) {
         p.setId(contadorId++);
         lista.add(p);
-        ArchivoCSV.exportarCSV(lista);
+        ArchivoCSV.exportarCSV(lista, rutaArchivo);
         return true;
     }
 
-    /** Consultar: busca por ID */
     public Producto buscarPorId(int id) {
         for (Producto p : lista) {
             if (p.getId() == id) return p;
@@ -37,7 +53,6 @@ public class GestorProductos {
         return null;
     }
 
-    /** Consultar: busca por nombre (parcial, sin mayúsculas) */
     public ArrayList<Producto> buscarPorNombre(String nombre) {
         ArrayList<Producto> resultado = new ArrayList<>();
         for (Producto p : lista) {
@@ -48,7 +63,7 @@ public class GestorProductos {
         return resultado;
     }
 
-    /** Modificar: actualiza los datos de un producto existente */
+    
     public boolean actualizar(Producto actualizado) {
         Iterator<Producto> it = lista.iterator();
         while (it.hasNext()) {
@@ -63,28 +78,26 @@ public class GestorProductos {
                 p.setStock(actualizado.getStock());
                 p.setStockMinimo(actualizado.getStockMinimo());
                 p.setEstado(actualizado.getEstado());
-                ArchivoCSV.exportarCSV(lista);
+                ArchivoCSV.exportarCSV(lista, rutaArchivo);
                 return true;
             }
         }
         return false;
     }
 
-    /** Eliminar: quita el producto por ID usando Iterator */
     public boolean eliminar(int id) {
         Iterator<Producto> it = lista.iterator();
         while (it.hasNext()) {
             Producto p = it.next();
             if (p.getId() == id) {
                 it.remove();
-                ArchivoCSV.exportarCSV(lista);
+                ArchivoCSV.exportarCSV(lista, rutaArchivo);
                 return true;
             }
         }
         return false;
     }
 
-    /** Verificar duplicado de código */
     public boolean existeCodigo(String codigo, int idExcluir) {
         for (Producto p : lista) {
             if (p.getCodigo().equalsIgnoreCase(codigo) && p.getId() != idExcluir) {
@@ -94,12 +107,11 @@ public class GestorProductos {
         return false;
     }
 
-    /** Reducir stock al procesar una venta */
     public boolean reducirStock(int idProducto, int cantidad) {
         Producto p = buscarPorId(idProducto);
         if (p != null && p.getStock() >= cantidad) {
             p.setStock(p.getStock() - cantidad);
-            ArchivoCSV.exportarCSV(lista);
+            ArchivoCSV.exportarCSV(lista, rutaArchivo);
             return true;
         }
         return false;

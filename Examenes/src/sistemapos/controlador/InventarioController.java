@@ -14,25 +14,27 @@ public class InventarioController {
     public InventarioController(InventarioFrame vista, GestorProductos gestor) {
         this.vista  = vista;
         this.gestor = gestor;
-        cargarTabla(gestor.getLista());
+        recargarDatos();
         registrarEventos();
+    }
+
+    public void recargarDatos() {
+        vista.txtFiltroId.setText("");
+        vista.txtFiltroNombre.setText("");
+        vista.cmbTipo.setSelectedIndex(0);
+        vista.rbTodos.setSelected(true);
+        cargarTabla(gestor.getLista());
     }
 
     private void registrarEventos() {
 
         vista.btnBuscar.addActionListener(e -> buscar());
-        vista.btnLimpiarFiltros.addActionListener(e -> {
-            vista.txtFiltroId.setText("");
-            vista.txtFiltroNombre.setText("");
-            vista.cmbTipo.setSelectedIndex(0);
-            vista.rbTodos.setSelected(true);
-            cargarTabla(gestor.getLista());
-        });
+        vista.btnLimpiarFiltros.addActionListener(e -> recargarDatos());
 
         vista.btnCrearNuevo.addActionListener(e ->
             JOptionPane.showMessageDialog(vista,
                 "Abre la ventana de Productos para crear un nuevo registro.",
-                "Información", JOptionPane.INFORMATION_MESSAGE));
+                "Informacion", JOptionPane.INFORMATION_MESSAGE));
 
         vista.btnModificar.addActionListener(e -> modificar());
         vista.btnEliminar.addActionListener(e  -> eliminar());
@@ -48,25 +50,18 @@ public class InventarioController {
 
         ArrayList<Producto> resultado = new ArrayList<>();
         for (Producto p : gestor.getLista()) {
-
-            // Filtro por ID
             if (!txtId.isEmpty()) {
                 try {
                     if (p.getId() != Integer.parseInt(txtId)) continue;
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(vista,
-                        "El ID debe ser un número entero.", "Error", JOptionPane.ERROR_MESSAGE);
+                        "El ID debe ser un numero entero.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
-            // Filtro por nombre
             if (!txtNombre.isEmpty() &&
                 !p.getNombre().toLowerCase().contains(txtNombre.toLowerCase())) continue;
-
-            // Filtro por tipo/categoría
             if (!"Todos".equals(tipo) && !p.getCategoria().equalsIgnoreCase(tipo)) continue;
-
-            // Filtro por estado
             if (!"Todos".equals(estadoFiltro) && !p.getEstado().equalsIgnoreCase(estadoFiltro)) continue;
 
             resultado.add(p);
@@ -86,7 +81,6 @@ public class InventarioController {
         Producto p = gestor.buscarPorId(id);
         if (p == null) return;
 
-        // Diálogo simple de modificación de stock
         String nuevoStock = JOptionPane.showInputDialog(vista,
             "Producto: " + p.getNombre() + "\nStock actual: " + p.getStock() + "\nNuevo stock:",
             "Modificar Stock", JOptionPane.QUESTION_MESSAGE);
@@ -99,7 +93,7 @@ public class InventarioController {
             JOptionPane.showMessageDialog(vista, "Stock actualizado correctamente.");
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(vista,
-                "El stock debe ser un número entero.", "Error", JOptionPane.ERROR_MESSAGE);
+                "El stock debe ser un numero entero.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -114,8 +108,8 @@ public class InventarioController {
         String nom = (String) vista.modeloTabla.getValueAt(fila, 1);
 
         int conf = JOptionPane.showConfirmDialog(vista,
-            "¿Está seguro de eliminar el producto \"" + nom + "\" (ID: " + id + ")?",
-            "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            "Esta seguro de eliminar el producto \"" + nom + "\" (ID: " + id + ")?",
+            "Confirmar Eliminacion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (conf == JOptionPane.YES_OPTION) {
             gestor.eliminar(id);

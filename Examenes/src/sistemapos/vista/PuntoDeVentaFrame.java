@@ -8,30 +8,30 @@ import java.awt.*;
 
 public class PuntoDeVentaFrame extends JInternalFrame {
 
-    // ── Cabecera ──────────────────────────────────────────────────────────
     public JTextField txtIdCliente, txtNombreCliente, txtCajero;
 
-    // ── Selección de producto ─────────────────────────────────────────────
     public JComboBox<String> cmbProducto;
     public JTextField        txtCantidad;
     public JButton           btnAnadir, btnModificarItem, btnEliminarItem;
 
-    // ── Tabla carrito ─────────────────────────────────────────────────────
     public JTable            tablaCarrito;
     public DefaultTableModel modeloCarrito;
 
-    // ── Totales ───────────────────────────────────────────────────────────
     public JTextField txtSubtotal, txtIva, txtTotal;
 
-    // ── Acciones ──────────────────────────────────────────────────────────
     public JButton btnLimpiarCarrito, btnProcesarPago, btnExportarTicket;
+    private VentaController controller;
 
     public PuntoDeVentaFrame(GestorProductos gestor) {
         super("Punto de Venta", true, true, true, true);
         setSize(800, 500);
         setLocation(50, 50);
         initUI();
-        new VentaController(this, gestor);
+        controller = new VentaController(this, gestor);
+    }
+
+    public void recargarDatos() {
+        controller.recargarDatos();
     }
 
     private void initUI() {
@@ -58,7 +58,7 @@ public class PuntoDeVentaFrame extends JInternalFrame {
 
     private JPanel buildPanelSeleccion() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("SELECCIÓN DE PRODUCTO"));
+        panel.setBorder(BorderFactory.createTitledBorder("SELECCION DE PRODUCTO"));
         panel.setPreferredSize(new Dimension(220, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -69,7 +69,7 @@ public class PuntoDeVentaFrame extends JInternalFrame {
         cmbProducto = new JComboBox<>();
         txtCantidad = new JTextField("1");
 
-        btnAnadir        = new JButton("Añadir a Carrito");
+        btnAnadir        = new JButton("Anadir a Carrito");
         btnModificarItem = new JButton("Modificar");
         btnEliminarItem  = new JButton("Eliminar");
 
@@ -84,7 +84,6 @@ public class PuntoDeVentaFrame extends JInternalFrame {
         gbc.gridx = 0; gbc.gridy = r;   gbc.weightx = 0.5; panel.add(btnModificarItem, gbc);
         gbc.gridx = 1; gbc.gridy = r++; gbc.weightx = 0.5; panel.add(btnEliminarItem,  gbc);
 
-        // Totales
         txtSubtotal = new JTextField(); txtSubtotal.setEditable(false);
         txtIva      = new JTextField(); txtIva.setEditable(false);
         txtTotal    = new JTextField(); txtTotal.setEditable(false);
@@ -112,9 +111,9 @@ public class PuntoDeVentaFrame extends JInternalFrame {
 
     private JPanel buildPanelTransaccion() {
         JPanel panel = new JPanel(new BorderLayout(4, 4));
-        panel.setBorder(BorderFactory.createTitledBorder("Detalles Transacción Actual"));
+        panel.setBorder(BorderFactory.createTitledBorder("Detalles Transaccion Actual"));
 
-        String[] cols = {"Cód.", "Descripción", "Cant.", "P.Unit.", "Total"};
+        String[] cols = {"Cod.", "Descripcion", "Cant.", "P.Unit.", "Total"};
         modeloCarrito = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };

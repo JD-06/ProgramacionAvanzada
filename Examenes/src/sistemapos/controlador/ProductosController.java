@@ -10,7 +10,7 @@ public class ProductosController {
 
     private final ProductosFrame vista;
     private final GestorProductos gestor;
-    private int idSeleccionado = -1; // -1 = modo insertar
+    private int idSeleccionado = -1;
 
     public ProductosController(ProductosFrame vista, GestorProductos gestor) {
         this.vista  = vista;
@@ -19,10 +19,12 @@ public class ProductosController {
         registrarEventos();
     }
 
-    // ── Eventos ───────────────────────────────────────────────────────────
-    private void registrarEventos() {
+    public void recargarDatos() {
+        cargarTabla(gestor.getLista());
+        limpiarFormulario();
+    }
 
-        // Selección en tabla → cargar formulario
+    private void registrarEventos() {
         vista.tabla.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && vista.tabla.getSelectedRow() >= 0) {
                 int fila = vista.tabla.getSelectedRow();
@@ -31,36 +33,25 @@ public class ProductosController {
                 if (p != null) cargarEnFormulario(p);
             }
         });
-
-        // Guardar (Insertar o Modificar)
         vista.btnGuardar.addActionListener(e -> guardar());
-
-        // Limpiar formulario
         vista.btnLimpiar.addActionListener(e -> limpiarFormulario());
-
-        // Buscar en catálogo
         vista.btnBuscar.addActionListener(e -> buscarEnCatalogo());
-
-        // Mostrar todos
         vista.btnMostrarTodos.addActionListener(e -> cargarTabla(gestor.getLista()));
-
-        // Exportar
         vista.btnExportar.addActionListener(e ->
             JOptionPane.showMessageDialog(vista,
-                "Lista exportada: " + gestor.getLista().size() + " registros en productos.csv",
+                "Lista guardada en: " + gestor.getRutaArchivo() +
+                    "\nRegistros: " + gestor.getLista().size(),
                 "Exportar", JOptionPane.INFORMATION_MESSAGE)
         );
     }
 
-    // ── Guardar (Insertar / Modificar) ───────────────────────────────────
     private void guardar() {
         try {
-            // Validaciones
             String codigo = vista.txtCodigo.getText().trim();
             String nombre = vista.txtNombre.getText().trim();
             if (codigo.isEmpty() || nombre.isEmpty()) {
                 JOptionPane.showMessageDialog(vista,
-                    "Código y Nombre son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+                    "Codigo y Nombre son obligatorios.", "Validacion", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             double precCom = Double.parseDouble(vista.txtPrecioCompra.getText().trim());
@@ -75,19 +66,17 @@ public class ProductosController {
                                       cat, precCom, precVen, stock, stockMin, estado);
 
             if (idSeleccionado == -1) {
-                // Insertar
                 if (gestor.existeCodigo(codigo, -1)) {
                     JOptionPane.showMessageDialog(vista,
-                        "El código ya existe.", "Duplicado", JOptionPane.ERROR_MESSAGE);
+                        "El codigo ya existe.", "Duplicado", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 gestor.insertar(p);
                 JOptionPane.showMessageDialog(vista, "Producto guardado correctamente.");
             } else {
-                // Modificar
                 if (gestor.existeCodigo(codigo, idSeleccionado)) {
                     JOptionPane.showMessageDialog(vista,
-                        "El código ya existe en otro producto.", "Duplicado", JOptionPane.ERROR_MESSAGE);
+                        "El codigo ya existe en otro producto.", "Duplicado", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 gestor.actualizar(p);
@@ -99,12 +88,11 @@ public class ProductosController {
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(vista,
-                "Los campos numéricos solo deben contener números.",
+                "Los campos numericos solo deben contener numeros.",
                 "Error de formato", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // ── Búsqueda en catálogo ─────────────────────────────────────────────
     private void buscarEnCatalogo() {
         String filtro = (String) vista.cmbFiltro.getSelectedItem();
         String termino = JOptionPane.showInputDialog(vista, "Buscar por " + filtro + ":");
@@ -115,7 +103,7 @@ public class ProductosController {
             boolean coincide = false;
             switch (filtro) {
                 case "Nombre":    coincide = p.getNombre().toLowerCase().contains(termino.toLowerCase());    break;
-                case "Categoría": coincide = p.getCategoria().toLowerCase().contains(termino.toLowerCase()); break;
+                case "Categoria": coincide = p.getCategoria().toLowerCase().contains(termino.toLowerCase()); break;
                 case "Estado":    coincide = p.getEstado().equalsIgnoreCase(termino);                       break;
             }
             if (coincide) resultado.add(p);
@@ -123,7 +111,6 @@ public class ProductosController {
         cargarTabla(resultado);
     }
 
-    // ── Utilidades de Vista ───────────────────────────────────────────────
     public void cargarTabla(ArrayList<Producto> lista) {
         vista.modeloTabla.setRowCount(0);
         for (Producto p : lista) {
