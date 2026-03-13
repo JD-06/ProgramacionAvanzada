@@ -1,6 +1,9 @@
 package sistemapos.vista;
 
 import sistemapos.controlador.VentaController;
+import sistemapos.modelo.GestorCajeros;
+import sistemapos.modelo.GestorClientes;
+import sistemapos.modelo.GestorCompras;
 import sistemapos.modelo.GestorProductos;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -8,7 +11,7 @@ import java.awt.*;
 
 public class PuntoDeVentaFrame extends JInternalFrame {
 
-    public JTextField txtIdCliente, txtNombreCliente, txtCajero;
+    public JComboBox<String> cmbCliente, cmbCajero;
 
     public JComboBox<String> cmbProducto;
     public JTextField        txtCantidad;
@@ -19,15 +22,22 @@ public class PuntoDeVentaFrame extends JInternalFrame {
 
     public JTextField txtSubtotal, txtIva, txtTotal;
 
-    public JButton btnLimpiarCarrito, btnProcesarPago, btnExportarTicket;
+    public JButton btnLimpiarCarrito, btnProcesarPago;
+    public JTable tablaSocios, tablaNoClientes;
+    public DefaultTableModel modeloSocios, modeloNoClientes;
     private VentaController controller;
 
-    public PuntoDeVentaFrame(GestorProductos gestor) {
+    public PuntoDeVentaFrame(
+        GestorProductos gestorProductos,
+        GestorClientes gestorClientes,
+        GestorCajeros gestorCajeros,
+        GestorCompras gestorCompras
+    ) {
         super("Punto de Venta", true, true, true, true);
-        setSize(800, 500);
+        setSize(980, 620);
         setLocation(50, 50);
         initUI();
-        controller = new VentaController(this, gestor);
+        controller = new VentaController(this, gestorProductos, gestorClientes, gestorCajeros, gestorCompras);
     }
 
     public void recargarDatos() {
@@ -46,13 +56,25 @@ public class PuntoDeVentaFrame extends JInternalFrame {
     }
 
     private JPanel buildPanelCabecera() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
-        txtIdCliente     = new JTextField(8);
-        txtNombreCliente = new JTextField(14);
-        txtCajero        = new JTextField(12);
-        panel.add(new JLabel("ID Cliente:"));  panel.add(txtIdCliente);
-        panel.add(new JLabel("Nombre:"));      panel.add(txtNombreCliente);
-        panel.add(new JLabel("Cajero:"));      panel.add(txtCajero);
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Datos de Venta"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(4, 6, 4, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        cmbCliente = new JComboBox<>();
+        cmbCajero = new JComboBox<>();
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+        panel.add(new JLabel("Cliente:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        panel.add(cmbCliente, gbc);
+
+        gbc.gridx = 2; gbc.weightx = 0;
+        panel.add(new JLabel("Cajero:"), gbc);
+        gbc.gridx = 3; gbc.weightx = 1;
+        panel.add(cmbCajero, gbc);
+
         return panel;
     }
 
@@ -100,7 +122,6 @@ public class PuntoDeVentaFrame extends JInternalFrame {
 
         btnLimpiarCarrito = new JButton("Limpiar Carrito");
         btnProcesarPago   = new JButton("Procesar Pago");
-        btnExportarTicket = new JButton("Exportar Ticket");
         gbc.gridy = r++; panel.add(btnLimpiarCarrito, gbc);
         gbc.gridy = r++; panel.add(btnProcesarPago,   gbc);
 
@@ -121,9 +142,21 @@ public class PuntoDeVentaFrame extends JInternalFrame {
         tablaCarrito.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         panel.add(new JScrollPane(tablaCarrito), BorderLayout.CENTER);
 
-        JPanel panelBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBtn.add(btnExportarTicket);
-        panel.add(panelBtn, BorderLayout.SOUTH);
+        String[] colsHist = {"Fecha", "Ticket", "Cliente", "Cajero", "Total"};
+        modeloSocios = new DefaultTableModel(colsHist, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        modeloNoClientes = new DefaultTableModel(colsHist, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tablaSocios = new JTable(modeloSocios);
+        tablaNoClientes = new JTable(modeloNoClientes);
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Compras Socios", new JScrollPane(tablaSocios));
+        tabs.addTab("Compras No Clientes", new JScrollPane(tablaNoClientes));
+        tabs.setPreferredSize(new Dimension(0, 190));
+        panel.add(tabs, BorderLayout.SOUTH);
 
         return panel;
     }

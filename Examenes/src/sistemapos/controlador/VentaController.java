@@ -1,12 +1,26 @@
 package sistemapos.controlador;
 
+import sistemapos.modelo.Cajero;
+import sistemapos.modelo.Cliente;
+import sistemapos.modelo.GestorCajeros;
+import sistemapos.modelo.GestorClientes;
+import sistemapos.modelo.GestorCompras;
 import sistemapos.modelo.GestorProductos;
 import sistemapos.modelo.ItemCarrito;
 import sistemapos.modelo.Producto;
+import sistemapos.modelo.RegistroCompra;
 import sistemapos.vista.PuntoDeVentaFrame;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,12 +30,24 @@ public class VentaController {
     private static final double IVA = 0.16;
 
     private final PuntoDeVentaFrame vista;
-    private final GestorProductos   gestor;
+    private final GestorProductos gestorProductos;
+    private final GestorClientes gestorClientes;
+    private final GestorCajeros gestorCajeros;
+    private final GestorCompras gestorCompras;
     private final ArrayList<ItemCarrito> carrito = new ArrayList<>();
 
-    public VentaController(PuntoDeVentaFrame vista, GestorProductos gestor) {
-        this.vista  = vista;
-        this.gestor = gestor;
+    public VentaController(
+        PuntoDeVentaFrame vista,
+        GestorProductos gestorProductos,
+        GestorClientes gestorClientes,
+        GestorCajeros gestorCajeros,
+        GestorCompras gestorCompras
+    ) {
+        this.vista = vista;
+        this.gestorProductos = gestorProductos;
+        this.gestorClientes = gestorClientes;
+        this.gestorCajeros = gestorCajeros;
+        this.gestorCompras = gestorCompras;
         registrarEventos();
         recargarDatos();
     }
@@ -29,62 +55,95 @@ public class VentaController {
     public void recargarDatos() {
         carrito.clear();
         cargarProductosCombo();
+        cargarClientesCombo();
+        cargarCajerosCombo();
         actualizarTablaCarrito();
+        cargarHistoriales();
         vista.txtCantidad.setText("1");
+    }
+
+    private void registrarEventos() {
+        vista.btnAnadir.addActionListener(e -> anadirAlCarrito());
+        vista.btnModificarItem.addActionListener(e -> modificarCantidadItem());
+        vista.btnEliminarItem.addActionListener(e -> eliminarItem());
+        vista.btnLimpiarCarrito.addActionListener(e -> limpiarCarrito());
+        vista.btnProcesarPago.addActionListener(e -> procesarPago());
+        vista.tablaSocios.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                abrirTicketDesdeTabla(vista.tablaSocios);
+            }
+        });
+        vista.tablaNoClientes.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                abrirTicketDesdeTabla(vista.tablaNoClientes);
+            }
+        });
     }
 
     private void cargarProductosCombo() {
         vista.cmbProducto.removeAllItems();
-        for (Producto p : gestor.getActivos()) {
+        for (Producto p : gestorProductos.getActivos()) {
             vista.cmbProducto.addItem("[" + p.getCodigo() + "] " + p.getNombre()
-                                     + "  $" + String.format("%.2f", p.getPrecioVenta()));
+                + "  $" + String.format("%.2f", p.getPrecioVenta()));
         }
     }
 
-    private void registrarEventos() {
-
-        vista.btnAnadir.addActionListener(e -> anadirAlCarrito());
-
-        vista.btnModificarItem.addActionListener(e -> {
-            int fila = vista.tablaCarrito.getSelectedRow();
-            if (fila < 0) { avisar("Seleccione un item para modificar."); return; }
-            String nuevaCant = JOptionPane.showInputDialog(vista,
-                "Nueva cantidad:", vista.modeloCarrito.getValueAt(fila, 2));
-            if (nuevaCant == null) return;
-            try {
-                int cant = Integer.parseInt(nuevaCant.trim());
-                if (cant <= 0) { avisar("La cantidad debe ser mayor a cero."); return; }
-                carrito.get(fila).setCantidad(cant);
-                actualizarTablaCarrito();
-            } catch (NumberFormatException ex) {
-                avisar("Ingrese un numero valido.");
+    private void cargarClientesCombo() {
+        vista.cmbCliente.removeAllItems();
+        vista.cmbCliente.addItem("Sin cliente");
+        for (Cliente cliente : gestorClientes.getLista()) {
+            String etiqueta = "[" + cliente.getId() + "] " + cliente.getNombre();
+            if (cliente.isSocio()) {
+                etiqueta += " (Socio)";
             }
-        });
+            vista.cmbCliente.addItem(etiqueta);
+        }
+        vista.cmbCliente.setSelectedIndex(0);
+    }
 
-        vista.btnEliminarItem.addActionListener(e -> {
-            int fila = vista.tablaCarrito.getSelectedRow();
-            if (fila < 0) { avisar("Seleccione un item para eliminar."); return; }
-            carrito.remove(fila);
-            actualizarTablaCarrito();
-        });
+    private void cargarCajerosCombo() {
+        vista.cmbCajero.removeAllItems();
+        for (Cajero cajero : gestorCajeros.getLista()) {
+            vista.cmbCajero.addItem("[" + cajero.getId() + "] " + cajero.getNombre());
+        }
+        if (vista.cmbCajero.getItemCount() == 0) {
+            vista.cmbCajero.addItem("Sin cajero");
+        }
+        vista.cmbCajero.setSelectedIndex(0);
+    }
 
-        vista.btnLimpiarCarrito.addActionListener(e -> {
-            carrito.clear();
-            actualizarTablaCarrito();
-        });
+    private void cargarHistoriales() {
+        cargarTablaCompras(vista.modeloSocios, gestorCompras.getComprasSocios());
+        cargarTablaCompras(vista.modeloNoClientes, gestorCompras.getComprasNoClientes());
+    }
 
-        vista.btnProcesarPago.addActionListener(e -> procesarPago());
-
-        vista.btnExportarTicket.addActionListener(e -> exportarTicket());
+    private void cargarTablaCompras(DefaultTableModel modelo, ArrayList<RegistroCompra> lista) {
+        modelo.setRowCount(0);
+        for (RegistroCompra registro : lista) {
+            modelo.addRow(new Object[]{
+                registro.getFechaHora(),
+                registro.getTicket(),
+                registro.getCliente(),
+                registro.getCajero(),
+                String.format("$%.2f", registro.getTotal())
+            });
+        }
     }
 
     private void anadirAlCarrito() {
         int idxCombo = vista.cmbProducto.getSelectedIndex();
-        if (idxCombo < 0) { avisar("Seleccione un producto."); return; }
+        if (idxCombo < 0) {
+            avisar("Seleccione un producto.");
+            return;
+        }
 
-        ArrayList<Producto> activos = gestor.getActivos();
-        if (idxCombo >= activos.size()) return;
-        Producto prod = activos.get(idxCombo);
+        ArrayList<Producto> activos = gestorProductos.getActivos();
+        if (idxCombo >= activos.size()) {
+            return;
+        }
+        Producto producto = activos.get(idxCombo);
 
         int cantidad;
         try {
@@ -95,19 +154,62 @@ public class VentaController {
             return;
         }
 
-        if (prod.getStock() < cantidad) {
-            avisar("Stock insuficiente. Disponible: " + prod.getStock());
+        if (producto.getStock() < cantidad) {
+            avisar("Stock insuficiente. Disponible: " + producto.getStock());
             return;
         }
 
         for (ItemCarrito item : carrito) {
-            if (item.getProducto().getId() == prod.getId()) {
+            if (item.getProducto().getId() == producto.getId()) {
                 item.setCantidad(item.getCantidad() + cantidad);
                 actualizarTablaCarrito();
                 return;
             }
         }
-        carrito.add(new ItemCarrito(prod, cantidad));
+        carrito.add(new ItemCarrito(producto, cantidad));
+        actualizarTablaCarrito();
+    }
+
+    private void modificarCantidadItem() {
+        int fila = vista.tablaCarrito.getSelectedRow();
+        if (fila < 0) {
+            avisar("Seleccione un item para modificar.");
+            return;
+        }
+        String nuevaCant = JOptionPane.showInputDialog(vista, "Nueva cantidad:", vista.modeloCarrito.getValueAt(fila, 2));
+        if (nuevaCant == null) {
+            return;
+        }
+        try {
+            int cantidad = Integer.parseInt(nuevaCant.trim());
+            if (cantidad <= 0) {
+                avisar("La cantidad debe ser mayor a cero.");
+                return;
+            }
+            ItemCarrito item = carrito.get(fila);
+            if (item.getProducto().getStock() < cantidad) {
+                avisar("Stock insuficiente. Disponible: " + item.getProducto().getStock());
+                return;
+            }
+            item.setCantidad(cantidad);
+            actualizarTablaCarrito();
+        } catch (NumberFormatException ex) {
+            avisar("Ingrese un numero valido.");
+        }
+    }
+
+    private void eliminarItem() {
+        int fila = vista.tablaCarrito.getSelectedRow();
+        if (fila < 0) {
+            avisar("Seleccione un item para eliminar.");
+            return;
+        }
+        carrito.remove(fila);
+        actualizarTablaCarrito();
+    }
+
+    private void limpiarCarrito() {
+        carrito.clear();
         actualizarTablaCarrito();
     }
 
@@ -124,7 +226,7 @@ public class VentaController {
             });
             subtotal += item.getTotal();
         }
-        double iva   = subtotal * IVA;
+        double iva = subtotal * IVA;
         double total = subtotal + iva;
         vista.txtSubtotal.setText(String.format("$%.2f", subtotal));
         vista.txtIva.setText(String.format("$%.2f", iva));
@@ -132,52 +234,100 @@ public class VentaController {
     }
 
     private void procesarPago() {
-        if (carrito.isEmpty()) { avisar("El carrito esta vacio."); return; }
+        if (carrito.isEmpty()) {
+            avisar("El carrito esta vacio.");
+            return;
+        }
+        if (gestorCajeros.getLista().isEmpty()) {
+            avisar("No hay cajeros registrados. Registre al menos uno.");
+            return;
+        }
 
-        int confirm = JOptionPane.showConfirmDialog(vista,
-            "Total a cobrar: " + vista.txtTotal.getText() +
-            "\nConfirmar pago?",
-            "Procesar Pago", JOptionPane.YES_NO_OPTION);
+        Cajero cajero = obtenerCajeroSeleccionado();
+        if (cajero == null) {
+            avisar("Seleccione un cajero.");
+            return;
+        }
+        Cliente cliente = obtenerClienteSeleccionado();
 
-        if (confirm != JOptionPane.YES_OPTION) return;
+        int confirm = JOptionPane.showConfirmDialog(
+            vista,
+            "Total a cobrar: " + vista.txtTotal.getText() + "\nConfirmar pago?",
+            "Procesar Pago",
+            JOptionPane.YES_NO_OPTION
+        );
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
 
         for (ItemCarrito item : carrito) {
-            gestor.reducirStock(item.getProducto().getId(), item.getCantidad());
+            gestorProductos.reducirStock(item.getProducto().getId(), item.getCantidad());
         }
+
+        String nombreCliente = cliente == null ? "Sin cliente" : cliente.getNombre();
+        String nombreCajero = cajero.getNombre();
         try {
-            String archivo = guardarTicketTxt();
-            JOptionPane.showMessageDialog(vista,
-                "Pago procesado!\nTotal: " + vista.txtTotal.getText() + "\nTicket: " + archivo,
-                "Exito", JOptionPane.INFORMATION_MESSAGE);
+            String archivo = guardarTicketTxt(nombreCliente, nombreCajero);
+            double total = calcularTotalCarritoConIva();
+            RegistroCompra registro = new RegistroCompra(
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
+                archivo,
+                nombreCliente,
+                nombreCajero,
+                total
+            );
+            if (cliente != null && cliente.isSocio()) {
+                gestorCompras.registrarCompraSocio(registro);
+            } else {
+                gestorCompras.registrarCompraNoCliente(registro);
+            }
+            cargarHistoriales();
+            JOptionPane.showMessageDialog(
+                vista,
+                "Pago procesado!\nTotal: " + String.format("$%.2f", total) + "\nTicket: " + archivo,
+                "Exito",
+                JOptionPane.INFORMATION_MESSAGE
+            );
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(vista,
-                "Pago procesado!\nTotal: " + vista.txtTotal.getText() +
-                    "\nNo se pudo generar ticket: " + ex.getMessage(),
-                "Exito parcial", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(
+                vista,
+                "Pago procesado, pero no se pudo generar ticket: " + ex.getMessage(),
+                "Exito parcial",
+                JOptionPane.WARNING_MESSAGE
+            );
         }
 
         carrito.clear();
         actualizarTablaCarrito();
         cargarProductosCombo();
-        vista.txtIdCliente.setText("");
-        vista.txtNombreCliente.setText("");
     }
 
-    private void exportarTicket() {
-        if (carrito.isEmpty()) { avisar("El carrito esta vacio."); return; }
-
-        try {
-            String archivo = guardarTicketTxt();
-            JOptionPane.showMessageDialog(vista,
-                "Ticket exportado: " + archivo, "Exportar", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(vista,
-                "Error al exportar ticket: " + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
+    private Cajero obtenerCajeroSeleccionado() {
+        int idx = vista.cmbCajero.getSelectedIndex();
+        if (idx < 0) {
+            return null;
         }
+        ArrayList<Cajero> lista = gestorCajeros.getLista();
+        if (idx >= lista.size()) {
+            return null;
+        }
+        return lista.get(idx);
     }
 
-    private String guardarTicketTxt() throws IOException {
+    private Cliente obtenerClienteSeleccionado() {
+        int idx = vista.cmbCliente.getSelectedIndex();
+        if (idx <= 0) {
+            return null;
+        }
+        ArrayList<Cliente> lista = gestorClientes.getLista();
+        int real = idx - 1;
+        if (real < 0 || real >= lista.size()) {
+            return null;
+        }
+        return lista.get(real);
+    }
+
+    private String guardarTicketTxt(String nombreCliente, String nombreCajero) throws IOException {
         LocalDateTime ahora = LocalDateTime.now();
         String timestamp = ahora.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String archivo = "ticket_" + timestamp + ".txt";
@@ -186,18 +336,19 @@ public class VentaController {
             fw.write("          TICKET DE VENTA           \n");
             fw.write("====================================\n");
             fw.write("Fecha: " + ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "\n");
-            fw.write("Cliente: " + vista.txtNombreCliente.getText() + "\n");
-            fw.write("Cajero:  " + vista.txtCajero.getText() + "\n");
+            fw.write("Cliente: " + nombreCliente + "\n");
+            fw.write("Cajero:  " + nombreCajero + "\n");
             fw.write("------------------------------------\n");
-            fw.write(String.format("%-15s %4s %8s %10s\n",
-                "Producto","Cant","P.Unit","Total"));
+            fw.write(String.format("%-15s %4s %8s %10s\n", "Producto", "Cant", "P.Unit", "Total"));
             fw.write("------------------------------------\n");
             for (ItemCarrito item : carrito) {
-                fw.write(String.format("%-15s %4d %8.2f %10.2f\n",
+                fw.write(String.format(
+                    "%-15s %4d %8.2f %10.2f\n",
                     item.getProducto().getNombre(),
                     item.getCantidad(),
                     item.getProducto().getPrecioVenta(),
-                    item.getTotal()));
+                    item.getTotal()
+                ));
             }
             fw.write("------------------------------------\n");
             fw.write(String.format("Subtotal: %s\n", vista.txtSubtotal.getText()));
@@ -206,6 +357,60 @@ public class VentaController {
             fw.write("====================================\n");
         }
         return archivo;
+    }
+
+    private void abrirTicketDesdeTabla(JTable tabla) {
+        int fila = tabla.getSelectedRow();
+        if (fila < 0) {
+            return;
+        }
+        Object valor = tabla.getValueAt(fila, 1);
+        if (valor == null) {
+            avisar("No se encontro el ticket de esta compra.");
+            return;
+        }
+        String ticket = valor.toString().trim();
+        if (ticket.isEmpty()) {
+            avisar("No se encontro el ticket de esta compra.");
+            return;
+        }
+        Path ruta = Paths.get(ticket);
+        if (!ruta.isAbsolute()) {
+            ruta = Paths.get(System.getProperty("user.dir")).resolve(ruta).normalize();
+        }
+        if (!Files.exists(ruta)) {
+            avisar("El archivo de ticket no existe: " + ruta.toString());
+            return;
+        }
+        try {
+            String contenido = new String(Files.readAllBytes(ruta), StandardCharsets.UTF_8);
+            JTextArea area = new JTextArea(contenido);
+            area.setEditable(false);
+            area.setCaretPosition(0);
+            JScrollPane scroll = new JScrollPane(area);
+            scroll.setPreferredSize(new Dimension(640, 420));
+            JOptionPane.showMessageDialog(
+                vista,
+                scroll,
+                "Ticket completo - " + ticket,
+                JOptionPane.INFORMATION_MESSAGE
+            );
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                vista,
+                "No se pudo leer el ticket: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private double calcularTotalCarritoConIva() {
+        double subtotal = 0;
+        for (ItemCarrito item : carrito) {
+            subtotal += item.getTotal();
+        }
+        return subtotal + (subtotal * IVA);
     }
 
     private void avisar(String msg) {

@@ -1,5 +1,8 @@
 package sistemapos.vista;
 
+import sistemapos.modelo.GestorCajeros;
+import sistemapos.modelo.GestorClientes;
+import sistemapos.modelo.GestorCompras;
 import sistemapos.modelo.GestorProductos;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -11,12 +14,20 @@ public class MainFrame extends JFrame {
 
     private JDesktopPane desktop;
     private GestorProductos gestor;
+    private GestorClientes gestorClientes;
+    private GestorCajeros gestorCajeros;
+    private GestorCompras gestorCompras;
     private ProductosFrame productosFrame;
     private InventarioFrame inventarioFrame;
     private PuntoDeVentaFrame puntoDeVentaFrame;
+    private ClientesFrame clientesFrame;
+    private CajerosFrame cajerosFrame;
 
     public MainFrame() {
         gestor = new GestorProductos();
+        gestorClientes = new GestorClientes();
+        gestorCajeros = new GestorCajeros();
+        gestorCompras = new GestorCompras();
         initUI();
     }
 
@@ -43,12 +54,19 @@ public class MainFrame extends JFrame {
         menuVistas.add(miInventario);
         menuVistas.add(miPuntoVenta);
 
+        JMenu menuPersonas = new JMenu("Personas");
+        JMenuItem miClientes = new JMenuItem("Socios");
+        JMenuItem miCajeros = new JMenuItem("Cajeros");
+        menuPersonas.add(miClientes);
+        menuPersonas.add(miCajeros);
+
         JMenu menuSistema = new JMenu("Sistema");
         JMenuItem miSalir = new JMenuItem("Salir");
         menuSistema.add(miSalir);
 
         menuBar.add(menuArchivo);
         menuBar.add(menuVistas);
+        menuBar.add(menuPersonas);
         menuBar.add(menuSistema);
         setJMenuBar(menuBar);
 
@@ -56,6 +74,8 @@ public class MainFrame extends JFrame {
         miProductos.addActionListener((ActionEvent e) -> abrirProductos());
         miInventario.addActionListener((ActionEvent e) -> abrirInventario());
         miPuntoVenta.addActionListener((ActionEvent e) -> abrirPuntoDeVenta());
+        miClientes.addActionListener((ActionEvent e) -> abrirClientes());
+        miCajeros.addActionListener((ActionEvent e) -> abrirCajeros());
         miSalir.addActionListener((ActionEvent e) -> System.exit(0));
     }
 
@@ -98,6 +118,12 @@ public class MainFrame extends JFrame {
         }
     }
 
+    private void refrescarSeleccionVenta() {
+        if (estaAbierto(puntoDeVentaFrame)) {
+            puntoDeVentaFrame.recargarDatos();
+        }
+    }
+
     private boolean estaAbierto(JInternalFrame frame) {
         return frame != null && frame.isDisplayable() && !frame.isClosed();
     }
@@ -134,12 +160,37 @@ public class MainFrame extends JFrame {
 
     private void abrirPuntoDeVenta() {
         if (estaAbierto(puntoDeVentaFrame)) {
+            puntoDeVentaFrame.recargarDatos();
             activarVentana(puntoDeVentaFrame);
             return;
         }
-        puntoDeVentaFrame = new PuntoDeVentaFrame(gestor);
+        puntoDeVentaFrame = new PuntoDeVentaFrame(gestor, gestorClientes, gestorCajeros, gestorCompras);
         desktop.add(puntoDeVentaFrame);
         puntoDeVentaFrame.setVisible(true);
         activarVentana(puntoDeVentaFrame);
+    }
+
+    private void abrirClientes() {
+        if (estaAbierto(clientesFrame)) {
+            clientesFrame.recargarDatos();
+            activarVentana(clientesFrame);
+            return;
+        }
+        clientesFrame = new ClientesFrame(gestorClientes, this::refrescarSeleccionVenta);
+        desktop.add(clientesFrame);
+        clientesFrame.setVisible(true);
+        activarVentana(clientesFrame);
+    }
+
+    private void abrirCajeros() {
+        if (estaAbierto(cajerosFrame)) {
+            cajerosFrame.recargarDatos();
+            activarVentana(cajerosFrame);
+            return;
+        }
+        cajerosFrame = new CajerosFrame(gestorCajeros, this::refrescarSeleccionVenta);
+        desktop.add(cajerosFrame);
+        cajerosFrame.setVisible(true);
+        activarVentana(cajerosFrame);
     }
 }
