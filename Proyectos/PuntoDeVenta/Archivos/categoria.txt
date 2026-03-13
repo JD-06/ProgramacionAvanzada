@@ -1,0 +1,2 @@
+1,Lacteos,y derivados
+2,Rice,arroz blanco
