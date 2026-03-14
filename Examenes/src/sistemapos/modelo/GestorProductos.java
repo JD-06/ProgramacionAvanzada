@@ -6,6 +6,8 @@ import java.util.Iterator;
 
 public class GestorProductos {
 
+    private static final String ESTADO_ACTIVO = "Activo";
+    private static final String ESTADO_AGOTADO = "Agotado";
     private ArrayList<Producto> lista;
     private static int contadorId = 1;
     private String rutaArchivo;
@@ -17,6 +19,7 @@ public class GestorProductos {
     public GestorProductos(String rutaArchivoInicial) {
         rutaArchivo = rutaArchivoInicial;
         lista = ArchivoCSV.importarCSV(rutaArchivo);
+        normalizarListaEstadosPorStock();
         recalcularContadorId();
     }
 
@@ -32,6 +35,7 @@ public class GestorProductos {
     public void cargarDesdeCSV(String rutaArchivoNuevo) {
         rutaArchivo = rutaArchivoNuevo;
         lista = ArchivoCSV.importarCSV(rutaArchivo);
+        normalizarListaEstadosPorStock();
         recalcularContadorId();
     }
 
@@ -39,8 +43,23 @@ public class GestorProductos {
         return rutaArchivo;
     }
 
+    private void normalizarEstadoPorStock(Producto producto) {
+        if (producto.getStock() > 0) {
+            producto.setEstado(ESTADO_ACTIVO);
+        } else {
+            producto.setEstado(ESTADO_AGOTADO);
+        }
+    }
+
+    private void normalizarListaEstadosPorStock() {
+        for (Producto producto : lista) {
+            normalizarEstadoPorStock(producto);
+        }
+    }
+
     public boolean insertar(Producto p) {
         p.setId(contadorId++);
+        normalizarEstadoPorStock(p);
         lista.add(p);
         ArchivoCSV.exportarCSV(lista, rutaArchivo);
         return true;
@@ -77,7 +96,7 @@ public class GestorProductos {
                 p.setPrecioVenta(actualizado.getPrecioVenta());
                 p.setStock(actualizado.getStock());
                 p.setStockMinimo(actualizado.getStockMinimo());
-                p.setEstado(actualizado.getEstado());
+                normalizarEstadoPorStock(p);
                 ArchivoCSV.exportarCSV(lista, rutaArchivo);
                 return true;
             }
@@ -109,12 +128,18 @@ public class GestorProductos {
 
     public boolean reducirStock(int idProducto, int cantidad) {
         Producto p = buscarPorId(idProducto);
-        if (p != null && p.getStock() >= cantidad) {
+        if (p != null && cantidad > 0 && p.getStock() >= cantidad) {
             p.setStock(p.getStock() - cantidad);
+            normalizarEstadoPorStock(p);
             ArchivoCSV.exportarCSV(lista, rutaArchivo);
             return true;
         }
         return false;
+    }
+
+    public boolean hayStockSuficiente(int idProducto, int cantidad) {
+        Producto p = buscarPorId(idProducto);
+        return p != null && cantidad > 0 && p.getStock() >= cantidad;
     }
 
     public ArrayList<Producto> getLista()          { return lista; }
@@ -122,7 +147,9 @@ public class GestorProductos {
     public ArrayList<Producto> getActivos() {
         ArrayList<Producto> activos = new ArrayList<>();
         for (Producto p : lista) {
-            if (p.getEstado().equalsIgnoreCase("Activo")) activos.add(p);
+            if (p.getStock() > 0 && !p.getEstado().equalsIgnoreCase(ESTADO_AGOTADO)) {
+                activos.add(p);
+            }
         }
         return activos;
     }

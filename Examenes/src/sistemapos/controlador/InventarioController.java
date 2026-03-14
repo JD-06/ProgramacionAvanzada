@@ -45,7 +45,7 @@ public class InventarioController {
         String txtNombre = vista.txtFiltroNombre.getText().trim();
         String tipo      = (String) vista.cmbTipo.getSelectedItem();
         String estadoFiltro = vista.rbDisponible.isSelected() ? "Activo"
-                            : vista.rbAgotado.isSelected()    ? "Desactivado"
+                            : vista.rbAgotado.isSelected()    ? "Agotado"
                             : "Todos";
 
         ArrayList<Producto> resultado = new ArrayList<>();
@@ -62,7 +62,9 @@ public class InventarioController {
             if (!txtNombre.isEmpty() &&
                 !p.getNombre().toLowerCase().contains(txtNombre.toLowerCase())) continue;
             if (!"Todos".equals(tipo) && !p.getCategoria().equalsIgnoreCase(tipo)) continue;
-            if (!"Todos".equals(estadoFiltro) && !p.getEstado().equalsIgnoreCase(estadoFiltro)) continue;
+            boolean disponible = p.getStock() > 0 && !p.getEstado().equalsIgnoreCase("Agotado");
+            if ("Activo".equals(estadoFiltro) && !disponible) continue;
+            if ("Agotado".equals(estadoFiltro) && disponible) continue;
 
             resultado.add(p);
         }
@@ -121,7 +123,9 @@ public class InventarioController {
     public void cargarTabla(ArrayList<Producto> lista) {
         vista.modeloTabla.setRowCount(0);
         for (Producto p : lista) {
-            String estadoTabla = p.getEstado().equalsIgnoreCase("Activo") ? "Disponible" : "Agotado";
+            String estadoTabla = p.getStock() > 0 && !p.getEstado().equalsIgnoreCase("Agotado")
+                ? "Disponible"
+                : "Agotado";
             vista.modeloTabla.addRow(new Object[]{
                 p.getId(), p.getNombre(), p.getCategoria(),
                 p.getStock(), String.format("$%.2f", p.getPrecioVenta()), estadoTabla

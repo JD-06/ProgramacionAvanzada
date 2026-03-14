@@ -161,7 +161,12 @@ public class VentaController {
 
         for (ItemCarrito item : carrito) {
             if (item.getProducto().getId() == producto.getId()) {
-                item.setCantidad(item.getCantidad() + cantidad);
+                int nuevaCantidad = item.getCantidad() + cantidad;
+                if (!gestorProductos.hayStockSuficiente(producto.getId(), nuevaCantidad)) {
+                    avisar("Stock insuficiente. Disponible: " + producto.getStock());
+                    return;
+                }
+                item.setCantidad(nuevaCantidad);
                 actualizarTablaCarrito();
                 return;
             }
@@ -187,8 +192,10 @@ public class VentaController {
                 return;
             }
             ItemCarrito item = carrito.get(fila);
-            if (item.getProducto().getStock() < cantidad) {
-                avisar("Stock insuficiente. Disponible: " + item.getProducto().getStock());
+            if (!gestorProductos.hayStockSuficiente(item.getProducto().getId(), cantidad)) {
+                Producto actual = gestorProductos.buscarPorId(item.getProducto().getId());
+                int disponible = actual == null ? 0 : actual.getStock();
+                avisar("Stock insuficiente. Disponible: " + disponible);
                 return;
             }
             item.setCantidad(cantidad);
@@ -261,7 +268,21 @@ public class VentaController {
         }
 
         for (ItemCarrito item : carrito) {
-            gestorProductos.reducirStock(item.getProducto().getId(), item.getCantidad());
+            if (!gestorProductos.hayStockSuficiente(item.getProducto().getId(), item.getCantidad())) {
+                Producto actual = gestorProductos.buscarPorId(item.getProducto().getId());
+                int disponible = actual == null ? 0 : actual.getStock();
+                avisar("No hay stock suficiente para " + item.getProducto().getNombre() + ". Disponible: " + disponible);
+                cargarProductosCombo();
+                return;
+            }
+        }
+
+        for (ItemCarrito item : carrito) {
+            if (!gestorProductos.reducirStock(item.getProducto().getId(), item.getCantidad())) {
+                avisar("No se pudo completar la compra por stock insuficiente.");
+                cargarProductosCombo();
+                return;
+            }
         }
 
         String nombreCliente = cliente == null ? "Sin cliente" : cliente.getNombre();
