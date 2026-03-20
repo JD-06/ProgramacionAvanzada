@@ -4,6 +4,15 @@ import sistemapos.modelo.Producto;
 import java.io.*;
 import java.util.ArrayList;
 
+/**
+ * Persistencia de productos en CSV.
+ *
+ * Formato extendido (12 campos):
+ * id,codigo,nombre,descripcion,categoria,precioCompra,precioVenta,
+ * stock,stockMinimo,estado,tipo,imagenRuta
+ *
+ * Compatible con archivos antiguos de 10 campos (tipo e imagen se omiten → Unitario/"").
+ */
 public class ArchivoCSV {
 
     public static final String RUTA_POR_DEFECTO = "productos.csv";
@@ -15,7 +24,7 @@ public class ArchivoCSV {
     public static void exportarCSV(ArrayList<Producto> lista, String ruta) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(ruta))) {
             for (Producto p : lista) {
-                pw.println(p.toString());
+                pw.println(p.toString()); // incluye tipo e imagenRuta
             }
         } catch (IOException e) {
             System.err.println("Error al exportar CSV: " + e.getMessage());
@@ -36,22 +45,29 @@ public class ArchivoCSV {
             while ((linea = br.readLine()) != null) {
                 linea = linea.trim();
                 if (linea.isEmpty()) continue;
-                String[] campos = linea.split(",");
-                if (campos.length < 10) continue;
+                String[] c = linea.split(",");
+                if (c.length < 10) continue; // linea invalida
                 try {
-                    int id            = Integer.parseInt(campos[0].trim());
-                    String codigo     = campos[1].trim();
-                    String nombre     = campos[2].trim();
-                    String descripcion= campos[3].trim().replace(";", ",");
-                    String categoria  = campos[4].trim();
-                    double precCom    = Double.parseDouble(campos[5].trim());
-                    double precVen    = Double.parseDouble(campos[6].trim());
-                    int stock         = Integer.parseInt(campos[7].trim());
-                    int stockMin      = Integer.parseInt(campos[8].trim());
-                    String estado     = campos[9].trim();
-                    lista.add(new Producto(id, codigo, nombre, descripcion,
-                                          categoria, precCom, precVen,
-                                          stock, stockMin, estado));
+                    int    id       = Integer.parseInt(c[0].trim());
+                    String codigo   = c[1].trim();
+                    String nombre   = c[2].trim();
+                    String desc     = c[3].trim().replace(";", ",");
+                    String cat      = c[4].trim();
+                    double precCom  = Double.parseDouble(c[5].trim());
+                    double precVen  = Double.parseDouble(c[6].trim());
+                    int    stock    = Integer.parseInt(c[7].trim());
+                    int    stockMin = Integer.parseInt(c[8].trim());
+                    String estado   = c[9].trim();
+
+                    // Campos nuevos (compatibilidad con archivos viejos)
+                    String tipo   = c.length > 10 ? c[10].trim() : "Unitario";
+                    String imagen = c.length > 11 ? c[11].trim().replace(";", ",") : "";
+
+                    Producto p = Producto.crear(tipo, id, codigo, nombre, desc,
+                                               cat, precCom, precVen,
+                                               stock, stockMin, estado);
+                    p.setImagenRuta(imagen);
+                    lista.add(p);
                 } catch (NumberFormatException e) {
                     System.err.println("Linea mal formada, se omite: " + linea);
                 }

@@ -2,12 +2,12 @@ package sistemapos.modelo;
 
 import sistemapos.persistencia.ArchivoCSV;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class GestorProductos {
 
-    private static final String ESTADO_ACTIVO = "Activo";
+    private static final String ESTADO_ACTIVO  = "Activo";
     private static final String ESTADO_AGOTADO = "Agotado";
+
     private ArrayList<Producto> lista;
     private static int contadorId = 1;
     private String rutaArchivo;
@@ -26,9 +26,7 @@ public class GestorProductos {
     private void recalcularContadorId() {
         contadorId = 1;
         for (Producto p : lista) {
-            if (p.getId() >= contadorId) {
-                contadorId = p.getId() + 1;
-            }
+            if (p.getId() >= contadorId) contadorId = p.getId() + 1;
         }
     }
 
@@ -39,22 +37,14 @@ public class GestorProductos {
         recalcularContadorId();
     }
 
-    public String getRutaArchivo() {
-        return rutaArchivo;
-    }
+    public String getRutaArchivo() { return rutaArchivo; }
 
     private void normalizarEstadoPorStock(Producto producto) {
-        if (producto.getStock() > 0) {
-            producto.setEstado(ESTADO_ACTIVO);
-        } else {
-            producto.setEstado(ESTADO_AGOTADO);
-        }
+        producto.setEstado(producto.getStock() > 0 ? ESTADO_ACTIVO : ESTADO_AGOTADO);
     }
 
     private void normalizarListaEstadosPorStock() {
-        for (Producto producto : lista) {
-            normalizarEstadoPorStock(producto);
-        }
+        for (Producto p : lista) normalizarEstadoPorStock(p);
     }
 
     public boolean insertar(Producto p) {
@@ -75,28 +65,20 @@ public class GestorProductos {
     public ArrayList<Producto> buscarPorNombre(String nombre) {
         ArrayList<Producto> resultado = new ArrayList<>();
         for (Producto p : lista) {
-            if (p.getNombre().toLowerCase().contains(nombre.toLowerCase())) {
+            if (p.getNombre().toLowerCase().contains(nombre.toLowerCase()))
                 resultado.add(p);
-            }
         }
         return resultado;
     }
 
-    
+    /**
+     * Reemplaza el objeto en la lista por el actualizado (admite cambio de tipo).
+     */
     public boolean actualizar(Producto actualizado) {
-        Iterator<Producto> it = lista.iterator();
-        while (it.hasNext()) {
-            Producto p = it.next();
-            if (p.getId() == actualizado.getId()) {
-                p.setCodigo(actualizado.getCodigo());
-                p.setNombre(actualizado.getNombre());
-                p.setDescripcion(actualizado.getDescripcion());
-                p.setCategoria(actualizado.getCategoria());
-                p.setPrecioCompra(actualizado.getPrecioCompra());
-                p.setPrecioVenta(actualizado.getPrecioVenta());
-                p.setStock(actualizado.getStock());
-                p.setStockMinimo(actualizado.getStockMinimo());
-                normalizarEstadoPorStock(p);
+        for (int i = 0; i < lista.size(); i++) {
+            if (lista.get(i).getId() == actualizado.getId()) {
+                normalizarEstadoPorStock(actualizado);
+                lista.set(i, actualizado);
                 ArchivoCSV.exportarCSV(lista, rutaArchivo);
                 return true;
             }
@@ -105,23 +87,19 @@ public class GestorProductos {
     }
 
     public boolean eliminar(int id) {
-        Iterator<Producto> it = lista.iterator();
-        while (it.hasNext()) {
-            Producto p = it.next();
+        return lista.removeIf(p -> {
             if (p.getId() == id) {
-                it.remove();
                 ArchivoCSV.exportarCSV(lista, rutaArchivo);
                 return true;
             }
-        }
-        return false;
+            return false;
+        });
     }
 
     public boolean existeCodigo(String codigo, int idExcluir) {
         for (Producto p : lista) {
-            if (p.getCodigo().equalsIgnoreCase(codigo) && p.getId() != idExcluir) {
+            if (p.getCodigo().equalsIgnoreCase(codigo) && p.getId() != idExcluir)
                 return true;
-            }
         }
         return false;
     }
@@ -142,14 +120,13 @@ public class GestorProductos {
         return p != null && cantidad > 0 && p.getStock() >= cantidad;
     }
 
-    public ArrayList<Producto> getLista()          { return lista; }
+    public ArrayList<Producto> getLista() { return lista; }
 
     public ArrayList<Producto> getActivos() {
         ArrayList<Producto> activos = new ArrayList<>();
         for (Producto p : lista) {
-            if (p.getStock() > 0 && !p.getEstado().equalsIgnoreCase(ESTADO_AGOTADO)) {
+            if (p.getStock() > 0 && !p.getEstado().equalsIgnoreCase(ESTADO_AGOTADO))
                 activos.add(p);
-            }
         }
         return activos;
     }

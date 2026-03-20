@@ -2,6 +2,7 @@ package sistemapos.controlador;
 
 import sistemapos.modelo.Cajero;
 import sistemapos.modelo.Cliente;
+import sistemapos.exportacion.ExportadorJSON;
 import sistemapos.modelo.GestorCajeros;
 import sistemapos.modelo.GestorClientes;
 import sistemapos.modelo.GestorCompras;
@@ -287,9 +288,18 @@ public class VentaController {
 
         String nombreCliente = cliente == null ? "Sin cliente" : cliente.getNombre();
         String nombreCajero = cajero.getNombre();
+
+        // Calcular subtotal e IVA antes de vaciar el carrito
+        double subtotal = 0;
+        for (ItemCarrito item : carrito) subtotal += item.getTotal();
+        double iva   = subtotal * IVA;
+        double total = subtotal + iva;
+
+        // Copia del carrito para el JSON (se vaciará después)
+        ArrayList<ItemCarrito> copiaCarrito = new ArrayList<>(carrito);
+
         try {
             String archivo = guardarTicketTxt(nombreCliente, nombreCajero);
-            double total = calcularTotalCarritoConIva();
             RegistroCompra registro = new RegistroCompra(
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
                 archivo,
@@ -297,6 +307,10 @@ public class VentaController {
                 nombreCajero,
                 total
             );
+
+            // Exportar ticket a JSON (archivo individual + maestro)
+            ExportadorJSON.exportarTicket(registro, copiaCarrito, subtotal, iva);
+
             if (cliente != null && cliente.isSocio()) {
                 gestorCompras.registrarCompraSocio(registro);
             } else {
@@ -424,14 +438,6 @@ public class VentaController {
                 JOptionPane.ERROR_MESSAGE
             );
         }
-    }
-
-    private double calcularTotalCarritoConIva() {
-        double subtotal = 0;
-        for (ItemCarrito item : carrito) {
-            subtotal += item.getTotal();
-        }
-        return subtotal + (subtotal * IVA);
     }
 
     private void avisar(String msg) {
