@@ -1,0 +1,29 @@
+[
+  {
+    "id": "PROV001",
+    "nombre": "Distribuidora La Paloma S.A.",
+    "contacto": "Carlos Mendoza",
+    "telefono": "555-100-2000",
+    "email": "ventas@lapaloma.mx",
+    "categoria": "Despensa Basica",
+    "direccion": "Av. Industrial 123, CDMX"
+  },
+  {
+    "id": "PROV002",
+    "nombre": "Lácteos del Norte",
+    "contacto": "Ana García",
+    "telefono": "555-200-3000",
+    "email": "pedidos@lacteosn.mx",
+    "categoria": "Lacteos",
+    "direccion": "Blvd. Lechero 456, Monterrey"
+  },
+  {
+    "id": "PROV003",
+    "nombre": "Bebidas Freskas",
+    "contacto": "Luis Torres",
+    "telefono": "555-300-4000",
+    "email": "freskas@bebidas.mx",
+    "categoria": "Bebidas",
+    "direccion": "Calle Fuente 789, Guadalajara"
+  }
+]
