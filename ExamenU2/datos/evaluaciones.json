@@ -1,0 +1,154 @@
+{
+  "evaluaciones" : [ {
+    "id" : "CONTABILIDAD_AGUILARDIAZLILIANA_G",
+    "asignatura" : "CONTABILIDAD",
+    "profesor" : "AGUILAR DIAZ LILIANA",
+    "grupo" : "G",
+    "estatus" : "AMARILLO",
+    "carpeta_guardado" : "C:\\Users\\const\\OneDrive\\Escritorio\\Maestros\\Prueba1",
+    "ruta_plantilla" : "C:\\Users\\const\\Downloads\\examen.xlsx",
+    "datos_instrumento" : {
+      "fecha" : "2026-03-28",
+      "periodo" : "2026-1",
+      "actividad" : "",
+      "atributo" : "Comunicarse efectivamente con diferentes audiencias.",
+      "indicadores" : [ "", "", "" ],
+      "criterios" : [ {
+        "numero" : 1,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      }, {
+        "numero" : 2,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      }, {
+        "numero" : 3,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      }, {
+        "numero" : 4,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      }, {
+        "numero" : 5,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      }, {
+        "numero" : 6,
+        "calificacion" : 10.0,
+        "observacion" : ""
+      } ],
+      "criterio_desempenio" : "",
+      "nivel_desempenio" : "1"
+    },
+    "criterios_rubrica" : [ {
+      "descripcion" : "1",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "2",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "3",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "4",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "5",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "6",
+      "calificacion" : 10.0
+    }, {
+      "descripcion" : "",
+      "calificacion" : 0.0
+    } ],
+    "lista_cotejo" : {
+      "alumnos" : [ {
+        "nombre" : "ARELLANO LUNA CARLOS MARIO",
+        "calificacion" : 10.0
+      }, {
+        "nombre" : "BAEZ LOPEZ JOSE GUADALUPE",
+        "calificacion" : 10.0
+      }, {
+        "nombre" : "BARRON GONZALEZ JOSE ANGEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "CASTILLO AVILES ANAHI",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "CASTRO ROMAN GAEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "CAZARES PEÑA EMMANUEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "CERVANTES MORAN JORGE AIRAM",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "DEL ANGEL CERVANTES MIGUEL ANGEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "FLORES CASTILLO RICARDO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "GALVEZ GARCIA JOSE ANTONIO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "GARCIA ANGELES LUIS EMANUEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "GOMEZ AGUILAR BRANDON DE JESUS SALVADOR",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "GOMEZ GOMEZ JUAN DIEGO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "HERNANDEZ CASTILLO JOSUE ELEAZAR",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "LEY IBARRA ADRIEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "LOPEZ ESCOBEDO ANA CELIC",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "MEZA HERNANDEZ DALILA",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "MOLINA MENESES DIEGO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "ORTIZ HUERTA FEDRA YURITZI",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "PALOMO GOMEZ MANUEL ALEJANDRO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "PEREZ VALADEZ ERNESTO MANUEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "RAMIREZ GARCIA DANIEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "RICARDEZ REYES RAFAEL",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "ROJAS HERNANDEZ LUIS ALEJANDRO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "TALAVERA DAMIAN FELIPE ANTONIO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "VILLASEÑOR VARELA EMILIANO",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "ZAMORA VILLARREAL ULISES",
+        "calificacion" : 0.0
+      }, {
+        "nombre" : "ZUÑIGA MOCTEZUMA LUIS ANDRES",
+        "calificacion" : 0.0
+      } ]
+    }
+  } ]
+}
